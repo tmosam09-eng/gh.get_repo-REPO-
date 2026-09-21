@@ -1,0 +1,35 @@
+name: Tourism MLOps Pipeline
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  mlops:
+    runs-on: ubuntu-latest
+    env:
+      HF_TOKEN: ${{ secrets.HF_TOKEN }}
+      HF_DATASET_REPO: ${{ secrets.HF_DATASET_REPO }}
+      HF_MODEL_REPO: ${{ secrets.HF_MODEL_REPO }}
+      HF_SPACE_REPO: ${{ secrets.HF_SPACE_REPO }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: "3.11", cache: pip}
+      - run: pip install -r requirements.txt
+      - name: Register data
+        run: python src/data_registration.py
+      - name: Prepare data
+        run: python src/data_preparation.py
+      - name: Train, tune, track and register model
+        run: python src/train.py
+      - name: Deploy Streamlit Space
+        run: python src/deploy_to_space.py
+      - name: Push generated updates to main
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add data/train.csv data/test.csv model_building/metrics.json || true
+          git diff --cached --quiet || git commit -m "chore: update generated artifacts [skip ci]"
+          git push origin HEAD:main
