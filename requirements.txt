@@ -1,0 +1,8 @@
+pandas
+numpy
+scikit-learn==1.8.0
+joblib
+datasets
+huggingface_hub
+mlflow
+streamlit
